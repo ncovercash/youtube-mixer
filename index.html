@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>YouTube Mixer</title>
+    
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/js/materialize.min.js" defer></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/js-cookie/2.1.4/js.cookie.min.js"></script>
+
+    <script src="//www.youtube.com/iframe_api"></script>
+    
+    <link href="//cdnjs.cloudflare.com/ajax/libs/materialize/0.98.0/css/materialize.min.css" rel="stylesheet"/>
+    <link href="//fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+
+    <style>
+        .input-field label {
+            color: #f44336;
+        }
+        .input-field input[type=text]:focus + label {
+            color: #f44336;
+        }
+        .input-field input[type=text]:focus {
+            border-bottom: 1px solid #f44336;
+            box-shadow: 0 1px 0 0 #f44336;
+        }
+        .input-field input[type=password]:focus + label {
+            color: #f44336;
+        }
+        .input-field input[type=password]:focus {
+            border-bottom: 1px solid #f44336;
+            box-shadow: 0 1px 0 0 #f44336;
+        }
+        .input-field .prefix.active {
+            color: #f44336;
+        }
+
+        input[type=range]+.thumb {
+            background-color: #f44336;
+        }
+
+        input[type=range]+.thumb .value {
+            color: #f44336;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            background-color: #f44336;
+        }
+
+        input[type=range]::-moz-range-thumb {
+            background: #f44336;
+        }
+
+        input[type=range]::-ms-thumb {
+            background: #f44336;
+        }
+
+        .video-action-btn, .play-pause, .mute, .vol-slider, .remove {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="section">
+            <h1>YouTube Mixer</h1>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <div class="row">
+                <div class="col s12 m8 l10 input-field">
+                    <i class="material-icons prefix">play_circle_filled</i>
+                    <input type="text" id="newVideoIdInput" />
+                    <label for="newVideoIdInput">Video ID</label>
+                </div>
+                <div class="btn btn-large red col s12 m4 l2" id="addNewVideo">Add</div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <table id="mixer" class="col s12 highlight centered bordered">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>ID</th>
+                        <th>Play/Pause</th>
+                        <th>Mute</th>
+                        <th>Volume</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="section">
+            <h3 class="center">YouTube videos will appear below</h3>
+            <div class="row" id="players"></div>
+        </div>
+    </div>
+
+    <footer class="page-footer red">
+        <div class="container white-text">
+            <p>
+                © 2017 Noah Overcash (smileytechguy, inc.).
+            </p>
+            <p>
+                Made by <a href="//smileytechguy.com" class="white-text">smileytechguy</a>
+            </p>
+            <br>
+        </div>
+    </footer>
+</body>
+<script type="text/javascript">
+    var videos = [];
+
+    function onYouTubeIframeAPIReady() {
+        makeVideos(getVideoSet());
+    }
+
+    function getVideoSet() {
+        if (Cookies.get("videos") == undefined) {
+            loadDefaultVideoSet();
+        }
+        return JSON.parse(Cookies.get("videos"));
+    }
+
+    function loadDefaultVideoSet() {
+        Cookies.set("videos", JSON.stringify(["dQw4w9WgXcQ", "jofNR_WkoCE", "ZZ5LpwO-An4", "8ZcmTl_1ER8"]));
+    }
+
+    function makeVideo(id) {
+        $("#players").append("<div id=\"player"+videos.length+"\" class=\"col s12 m6\"></div>");
+        var arrayIndex = videos.length;
+        videos[arrayIndex] = new YT.Player('player'+videos.length, {
+            height: '480',
+            width: '640',
+            videoId: id,
+            events: {
+                "onReady": function(e) {
+                    e.target.playVideo().setVolume(100);
+                    $("table#mixer tbody").append("<tr id=\""+(arrayIndex)+"\"><td>"+e.target.getVideoData().title+"</td><td>"+id+"</td><td class=\"play-pause\"><i class=\"red-text video-action-btn material-icons\">pause</i></td><td class=\"mute\"><i class=\"red-text video-action-btn material-icons\">volume_up</i></td><td class=\"vol-slider\"><p class=\"range-field\"><input type=\"range\" min=\"0\" max=\"100\"/ value=\"100\"></p></td><td class=\"remove\"><i class=\"red-text video-action-btn material-icons\">clear</i></td></tr>");
+                    assignEventListeners(arrayIndex);
+                },
+                "onStateChange": function(e){ if (e.data === YT.PlayerState.ENDED) { e.target.playVideo(); } }
+            }
+        });
+    }
+
+    function makeVideos(ids) {
+        for (var i = 0; i < ids.length; i++) {
+            makeVideo(ids[i]);
+        }
+    }
+
+    function assignEventListeners(id) {
+        $("tr#"+id+" td.play-pause").click(function() {
+            if ($(this).find("i").text() == "pause") {
+                videos[id].pauseVideo();
+                $(this).find("i").text("play_arrow");
+            } else {
+                videos[id].playVideo();
+                $(this).find("i").text("pause");
+            }
+        });
+        $("tr#"+id+" td.mute").click(function() {
+            if ($(this).find("i").text() == "volume_up") {
+                videos[id].mute();
+                $(this).find("i").text("volume_off");
+            } else {
+                videos[id].unMute();
+                $(this).find("i").text("volume_up");
+            }
+        });
+        $("tr#"+id+" input[type=range]").on("input", function() {
+            videos[id].setVolume($("tr#"+id+" input[type=range]").val());
+            if ($("tr#"+id+" input[type=range]").val() == "0") {
+                videos[id].mute();
+                $("tr#"+id+" td.mute i").text("volume_off");
+            } else {
+                videos[id].unMute();
+                $("tr#"+id+" td.mute i").text("volume_up");
+            }
+        });
+        $("tr#"+id+" td.remove").click(function() {
+            $("tr#"+id).remove();
+            vidID = videos[id].getVideoData()["video_id"];
+            videos[id].destroy();
+            $("#player"+id).remove();
+            curCookie = getVideoSet();
+            Cookies.set("videos", JSON.stringify(curCookie.filter(function(cookieid) {
+                return cookieid != vidID;
+            })));
+        });
+    }
+
+    $(function() {
+        $("#addNewVideo").click(function(e) {
+            makeVideo($("#newVideoIdInput").val());
+            curCookie = getVideoSet();
+            curCookie.push($("#newVideoIdInput").val());
+            Cookies.set("videos", curCookie);
+            $("#newVideoIdInput").val("");
+        });
+    });
+</script>
+</html>
