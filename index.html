@@ -72,7 +72,7 @@
                 <div class="col s12 m8 l10 input-field">
                     <i class="material-icons prefix">play_circle_filled</i>
                     <input type="text" id="newVideoIdInput" />
-                    <label for="newVideoIdInput">Video ID</label>
+                    <label for="newVideoIdInput">Video ID/URL</label>
                 </div>
                 <div class="btn btn-large red col s12 m4 l2" id="addNewVideo">Add</div>
             </div>
@@ -202,11 +202,18 @@
         });
     }
 
+    function inputParser(url){
+        var regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#\&\?]*).*/;
+        var match = url.match(regExp);
+        return (match&&match[7].length==11) ? match[7] : url;
+    }
+
     $(function() {
         $("#addNewVideo").click(function(e) {
-            makeVideo($("#newVideoIdInput").val());
+            var id = inputParser($("#newVideoIdInput").val());
+            makeVideo(id);
             curCookie = getVideoSet();
-            curCookie.push($("#newVideoIdInput").val());
+            curCookie.push(id);
             Cookies.set("videos", curCookie);
             $("#newVideoIdInput").val("");
         });
